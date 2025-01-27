@@ -1,5 +1,6 @@
 import { useFileStorage } from "@/app/context/FileDirectoryContext";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { ButtonToggle } from "./common/ButtonToggle";
 import { FileList } from "./FileList";
 
@@ -13,6 +14,20 @@ export function FileDirectory() {
     sortByDate,
     onSearchChange
   } = useFileStorage();
+
+  const { route, query, back } = useRouter();
+  const generateBreadcrumbs = () => {
+    const pathArray = route.split("/").filter((path) => path);
+    const breadcrumbs = pathArray.map(() => {
+      const href = "/" + query.directory;
+      return { href, label: query.directory };
+    });
+
+    return breadcrumbs;
+  };
+
+  const breadcrumbs = generateBreadcrumbs();
+  const subdirectory = route !== "/";
 
   return (
     <div className="p-0">
@@ -54,12 +69,31 @@ export function FileDirectory() {
             <nav aria-label="breadcrumb flex">
               <ol className="p-4 w-full flex flex-row gap text-md">
                 <li className="breadcrumb-item">
-                  <Link className={`text-gray-500 font-extrabold`} href="/">
+                  <Link
+                    className={`${!subdirectory ? "text-gray-500" : "text-gray-900"} font-extrabold`}
+                    href="/">
                     Home
                   </Link>
                 </li>
+                {breadcrumbs.map((breadcrumb, index) => (
+                  <li
+                    key={index}
+                    className="breadcrumb-item text-capitalize font-bold flex gap-0 pl-3">
+                    <span className="size-2 w-4">/</span>
+                    <Link className="capitalize text-bold text-gray-500" href={breadcrumb.href}>
+                      {breadcrumb.label}
+                    </Link>
+                  </li>
+                ))}
               </ol>
             </nav>
+          </div>
+          <div className="flex flex-row px-4">
+            {subdirectory && (
+              <button onClick={() => back()} className="text-sm p-2 text-gray-900 hover:underline">
+                ↑ Back
+              </button>
+            )}
           </div>
           <ul className="p-6 py-2 divide-y divide-gray-200">
             <FileList files={files} />
