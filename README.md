@@ -18,3 +18,4 @@ If I was given more time/reflections:
 - Possibly add functionality with the search bar to also search for doc types and dates
 - Add storybook tests to the project
 - Ask more questions about the mocked data and how I would have achieved the sorting by size functionality
+- Add a WCAG accessibility test to the project
