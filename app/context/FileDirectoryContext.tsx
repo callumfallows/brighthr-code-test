@@ -10,17 +10,15 @@ interface FileDirectoryContextType {
   searchInput: string;
   sortAlphabetically: () => void;
   sortByDate: () => void;
-  setFiles: React.Dispatch<React.SetStateAction<FileData[] | undefined>>;
   onSearchChange: (input: string) => void;
 }
 
 export const FileDirectoryContext = createContext<FileDirectoryContextType | null>(null);
 
 export function FileDirectoryProvider({ children }: { children: React.ReactNode }) {
-  const { data: response, isLoading } = useFiles();
+  const { data: response } = useFiles();
   const { asPath } = useRouter();
 
-  const [files, setFiles] = useState(response);
   const [directoryName, setDirectoryName] = useState("");
 
   const [toggleAlphabeticallySortAToZ, setToggleAlphabeticallySortAToZ] = useState(true);
@@ -28,15 +26,7 @@ export function FileDirectoryProvider({ children }: { children: React.ReactNode 
   const [searchInput, setSearchInput] = useState("");
 
   useEffect(() => {
-    if (!isLoading && response) {
-      setFiles(response);
-    }
-  }, [response, isLoading]);
-
-  useEffect(() => {
-    if (asPath !== "") {
-      setDirectoryName(asPath.split("/")[1]);
-    }
+    setDirectoryName(asPath?.split("/")[1]);
   }, [asPath]);
 
   const setSearch = (input: string) => {
@@ -49,7 +39,7 @@ export function FileDirectoryProvider({ children }: { children: React.ReactNode 
     };
     const directory =
       directoryName &&
-      files?.filter((file: FileData) =>
+      response?.filter((file: FileData) =>
         file.name.toLowerCase().includes(directoryName?.toLowerCase())
       );
 
@@ -58,12 +48,14 @@ export function FileDirectoryProvider({ children }: { children: React.ReactNode 
         ? directory[0].files.filter(searchTerm)
         : directory[0].files;
     }
-    const filteredFiles = files?.filter(searchTerm);
+
+    const filteredFiles = response?.filter(searchTerm);
     if (filteredFiles) {
       return filteredFiles;
     }
+
     return response;
-  }, [response, directoryName, files, searchInput]);
+  }, [response, directoryName, searchInput]);
 
   const sortAlphabetically = useCallback(() => {
     let sortedFiles;
@@ -73,8 +65,8 @@ export function FileDirectoryProvider({ children }: { children: React.ReactNode 
       sortedFiles = currentDirectory?.sort((a, b) => b.name.localeCompare(a.name));
     }
 
-    setFiles(sortedFiles);
     setToggleAlphabeticallySortAToZ(!toggleAlphabeticallySortAToZ);
+    return sortedFiles;
   }, [currentDirectory, toggleAlphabeticallySortAToZ]);
 
   const sortByDate = useCallback(() => {
@@ -89,9 +81,8 @@ export function FileDirectoryProvider({ children }: { children: React.ReactNode 
         (a: FileData, b: FileData) => new Date(a.added).getTime() - new Date(b.added).getTime()
       );
     }
-
-    setFiles(sortedFiles);
     setToggleDateSortNewToOld(!toggleDateSortNewToOld);
+    return sortedFiles;
   }, [currentDirectory, toggleDateSortNewToOld]);
 
   const value = {
@@ -101,7 +92,6 @@ export function FileDirectoryProvider({ children }: { children: React.ReactNode 
     searchInput,
     sortAlphabetically,
     sortByDate,
-    setFiles,
     onSearchChange: setSearch
   };
   return <FileDirectoryContext.Provider value={value}>{children}</FileDirectoryContext.Provider>;
