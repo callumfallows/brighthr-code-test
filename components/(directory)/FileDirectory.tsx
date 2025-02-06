@@ -1,32 +1,26 @@
-import { useFileStorage } from "@/app/context/FileDirectoryContext";
-import Link from "next/link";
+import { useFileStorage } from "@/app/context/FileDirectory/FileDirectoryContext";
 import { useRouter } from "next/router";
-import { ButtonToggle } from "./common/ButtonToggle";
+import { Breadcrumbs } from "../common/Breadcrumbs";
+import { ButtonToggle } from "../common/ButtonToggle";
 import { FileList } from "./FileList";
+const SKELETON_COUNT = 3 as const;
+
+const skeletonArray: readonly number[] = [...Array(SKELETON_COUNT)];
 
 export function FileDirectory() {
   const {
     files,
-    toggleAlphabeticallySortAToZ,
-    toggleDateSortNewToOld,
+    filteredFiles,
+    isLoading,
     searchInput,
     sortAlphabetically,
+    sortConfig,
     sortByDate,
     onSearchChange
   } = useFileStorage();
 
-  const { route, query, back } = useRouter();
-  const generateBreadcrumbs = () => {
-    const pathArray = route.split("/").filter((path) => path);
-    const breadcrumbs = pathArray.map(() => {
-      const href = "/" + query.directory;
-      return { href, label: query.directory };
-    });
+  const { route, back } = useRouter();
 
-    return breadcrumbs;
-  };
-
-  const breadcrumbs = generateBreadcrumbs();
   const subdirectory = route !== "/";
 
   return (
@@ -49,17 +43,19 @@ export function FileDirectory() {
           <div className="flex flex-row w-full justify-end gap-4 pr-4">
             <ButtonToggle
               onClick={sortAlphabetically}
-              isToggled={toggleAlphabeticallySortAToZ}
+              isToggled={sortConfig.alphabetical.isAscending}
               buttonText="Sort Alphabetically"
               toggleText1="A-Z"
               toggleText2="Z-A"
+              aria-label={`Sort alphabetically ${sortConfig.alphabetical.isAscending ? "A to Z" : "Z to A"}`}
             />
             <ButtonToggle
               onClick={sortByDate}
-              isToggled={toggleDateSortNewToOld}
+              isToggled={sortConfig.date.isNewToOld}
               buttonText="Sort By Date"
               toggleText1="⬇"
               toggleText2="⬆"
+              aria-label={`Sort by date ${sortConfig.date.isNewToOld ? "newest to oldest" : "oldest to newest"}`}
             />
           </div>
         </div>
@@ -67,25 +63,7 @@ export function FileDirectory() {
         <div className="bg-gray-100 mt-6 rounded-lg">
           <div className="flex w-full">
             <nav aria-label="breadcrumb flex">
-              <ol className="p-4 w-full flex flex-row gap text-md">
-                <li className="breadcrumb-item">
-                  <Link
-                    className={`${!subdirectory ? "text-gray-500" : "text-gray-900"} font-extrabold`}
-                    href="/">
-                    Home
-                  </Link>
-                </li>
-                {breadcrumbs.map((breadcrumb, index) => (
-                  <li
-                    key={index}
-                    className="breadcrumb-item text-capitalize font-bold flex gap-0 pl-3">
-                    <span className="size-2 w-4">/</span>
-                    <Link className="capitalize text-bold text-gray-500" href={breadcrumb.href}>
-                      {breadcrumb.label}
-                    </Link>
-                  </li>
-                ))}
-              </ol>
+              <Breadcrumbs />
             </nav>
           </div>
           <div className="flex flex-row px-4">
@@ -95,8 +73,19 @@ export function FileDirectory() {
               </button>
             )}
           </div>
-          <ul className="p-6 py-2 divide-y divide-gray-200">
-            <FileList files={files} />
+          <ul
+            className="p-6 py-2 divide-y divide-gray-200"
+            role="list"
+            aria-label="File directory listing">
+            {isLoading ? (
+              skeletonArray.map((_, index) => (
+                <li key={index} aria-hidden="true">
+                  <div className="animate-pulse bg-gray-200 h-10 mb-2 w-full"></div>
+                </li>
+              ))
+            ) : (
+              <FileList files={filteredFiles || files} aria-label="List of files and folders" />
+            )}
           </ul>
         </div>
       </div>
